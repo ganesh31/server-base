@@ -1,17 +1,22 @@
-import { graphql, GraphQLSchema } from 'graphql';
+import { graphql, GraphQLSchema, ExecutionResult } from 'graphql';
 import { createSchema } from '../utils/createSchema';
 import { Maybe } from 'graphql/jsutils/Maybe';
 
 interface Options {
   source: string;
   variableValues?: Maybe<{
-    [key: string]: any;
+    [key: string]: unknown;
   }>;
+  userId?: string;
 }
 
 let schema: GraphQLSchema;
 
-export const gqlCall = async ({ source, variableValues }: Options) => {
+export const gqlCall = async ({
+  source,
+  variableValues,
+  userId,
+}: Options): Promise<ExecutionResult> => {
   if (!schema) {
     schema = await createSchema();
   }
@@ -19,5 +24,15 @@ export const gqlCall = async ({ source, variableValues }: Options) => {
     schema,
     source,
     variableValues,
+    contextValue: {
+      req: {
+        session: {
+          userId,
+        },
+      },
+      res: {
+        clearCookie: jest.fn(),
+      },
+    },
   });
 };

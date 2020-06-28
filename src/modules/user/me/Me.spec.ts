@@ -14,9 +14,9 @@ afterAll(async () => {
   await connection.close();
 });
 
-const registerMutation = `
-mutation($user: RegisterInput!){
-  register(user: $user){
+const meQuery = `
+{
+  me{
     id
     firstName
     lastName
@@ -26,34 +26,28 @@ mutation($user: RegisterInput!){
 }
 `;
 
-describe('Register', () => {
-  it('create a user', async () => {
-    const user = {
+describe('Me', () => {
+  it.only('get the logged in user', async () => {
+    const user = await User.create({
       firstName: faker.name.firstName(),
       lastName: faker.name.lastName(),
       email: faker.internet.email(),
       password: faker.internet.password(),
-    };
+    }).save();
+
     const response = await gqlCall({
-      source: registerMutation,
-      variableValues: {
-        user,
-      },
+      source: meQuery,
+      userId: user.id,
     });
 
     expect(response).toMatchObject({
       data: {
-        register: {
+        me: {
+          id: user.id,
           firstName: user.firstName,
-          lastName: user.lastName,
           email: user.email,
         },
       },
     });
-
-    const dbUser = await User.findOne({ where: { email: user.email } });
-
-    expect(dbUser).toBeDefined();
-    expect(dbUser?.confirmed).toBeFalsy();
   });
 });
